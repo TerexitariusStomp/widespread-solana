@@ -34,3 +34,6 @@ node src/demo.js          # dry run — prints the escrow + what it would send
 - **No platform custody**: the escrow is a plain keypair; release conditions
   are enforced by code, not by an operator. Aurora Intents settles the
   contributor on any chain they choose.
+
+  Note: the current Intents demo quotes **USDC (NEAR) → USDC (Solana)** —
+  PYUSD-for-PYUSD on both legs lands when the Intents quote supports it.
