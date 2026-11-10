@@ -6,8 +6,10 @@
 //     in ONE transaction → receipt = on-chain proof of verified work paid.
 
 import { Keypair } from '@solana/web3.js';
-import { writeFileSync } from 'node:fs';
-import { conn, PYUSD_MINT, contentHash, payWithMemo, memoIx, solBalance } from './lib.js';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { conn, PYUSD_MINT, contentHash, payWithMemo, memoIx, solBalance, loadKeypair, saveKeypair } from './lib.js';
 import { Transaction } from '@solana/web3.js';
 
 const log = (...a) => console.log(...a);
@@ -24,9 +26,13 @@ const CLAIM = {
 
 const out = {};
 
-// 1 · Payer escrow keypair — the market's funds live here.
-const escrow = Keypair.generate();
-writeFileSync('/tmp/ws-escrow.json', JSON.stringify([...escrow.secretKey]));
+// 1 · Payer escrow keypair — the market's funds live here. Persisted so a
+// dry-run funded escrow is the same signer on the next (real) run — a fresh
+// keypair per run leaves funded escrows orphaned.
+const ESCROW_PATH = join(homedir(), '.widespread', 'escrow.json');
+mkdirSync(join(homedir(), '.widespread'), { recursive: true });
+const escrow = existsSync(ESCROW_PATH) ? loadKeypair(ESCROW_PATH) : Keypair.generate();
+if (!existsSync(ESCROW_PATH)) saveKeypair(ESCROW_PATH, escrow);
 out.escrow = escrow.publicKey.toBase58();
 log('escrow       ', out.escrow);
 log('sol balance  ', await solBalance(escrow.publicKey), 'SOL — needs devnet airdrop + PYUSD');
